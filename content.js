@@ -91,7 +91,7 @@
             if (!efficiencyDisplay) {
               efficiencyDisplay = document.createElement('div');
               efficiencyDisplay.className = 'building-efficiency';
-              efficiencyDisplay.style.cssText = 'position: absolute; right: 50%; bottom: 20px; transform: translateX(50%); font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000; text-align: center;';
+              efficiencyDisplay.style.cssText = 'position: absolute; right: 20%; bottom: 5px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000; text-align: center;';
               
               // Make sure the building element has relative positioning
               if (buildingElement.style.position !== 'relative') {
