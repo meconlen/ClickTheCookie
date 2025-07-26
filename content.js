@@ -5,6 +5,7 @@
   console.log('Click the Cookie extension loaded - injecting auto-clicker into page context');
   
   let autoClickerEnabled = false;
+  let autoBuyEnabled = false;
   
   // Inject script into the page's context so it can access the Game object
   const script = document.createElement('script');
@@ -15,6 +16,7 @@
       let autoClickerInterval = null;
       let gameReady = false;
       let originalVolume = null;
+      let autoBuyInterval = null;
       
       function startAutoClicker() {
         if (autoClickerInterval) {
@@ -75,15 +77,14 @@
             if (!efficiencyDisplay) {
               efficiencyDisplay = document.createElement('div');
               efficiencyDisplay.className = 'building-efficiency';
-              efficiencyDisplay.style.cssText = 'font-size: 10px; color: #4CAF50; font-weight: bold; margin-top: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);';
+              efficiencyDisplay.style.cssText = 'position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #4CAF50; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000;';
               
-              // Find the right place to insert (after the price element)
-              const priceElement = buildingElement.querySelector('.price');
-              if (priceElement && priceElement.parentNode) {
-                priceElement.parentNode.insertBefore(efficiencyDisplay, priceElement.nextSibling);
-              } else {
-                buildingElement.appendChild(efficiencyDisplay);
+              // Make sure the building element has relative positioning
+              if (buildingElement.style.position !== 'relative') {
+                buildingElement.style.position = 'relative';
               }
+              
+              buildingElement.appendChild(efficiencyDisplay);
             }
             
             // Calculate and display efficiency
@@ -137,6 +138,46 @@
         console.log('Building efficiency display initialized');
       }
       
+      // Auto-buy functionality
+      function startAutoBuy() {
+        if (autoBuyInterval) {
+          clearInterval(autoBuyInterval);
+        }
+        
+        autoBuyInterval = setInterval(function() {
+          if (!Game.ObjectsById || Game.cookies < 1) return;
+          
+          let bestBuilding = null;
+          let bestEfficiency = 0;
+          
+          // Find the building with the highest CPS/C that we can afford
+          Game.ObjectsById.forEach(function(building) {
+            if (!building || building.price > Game.cookies) return;
+            
+            const efficiency = building.storedCps / building.price;
+            if (efficiency > bestEfficiency) {
+              bestEfficiency = efficiency;
+              bestBuilding = building;
+            }
+          });
+          
+          // Buy the most efficient building
+          if (bestBuilding && bestBuilding.price <= Game.cookies) {
+            bestBuilding.buy();
+          }
+        }, 100); // Check every 100ms
+        
+        console.log('Auto-buy started (100ms interval) in page context');
+      }
+      
+      function stopAutoBuy() {
+        if (autoBuyInterval) {
+          clearInterval(autoBuyInterval);
+          autoBuyInterval = null;
+        }
+        console.log('Auto-buy stopped in page context');
+      }
+      
       // Listen for toggle messages from content script
       window.addEventListener('message', function(event) {
         if (event.source !== window) return;
@@ -150,6 +191,16 @@
             }
           } else {
             console.log('Game not ready yet, cannot toggle auto-clicker');
+          }
+        } else if (event.data.type === 'TOGGLE_AUTO_BUY') {
+          if (gameReady) {
+            if (event.data.enabled) {
+              startAutoBuy();
+            } else {
+              stopAutoBuy();
+            }
+          } else {
+            console.log('Game not ready yet, cannot toggle auto-buy');
           }
         }
       });
@@ -165,9 +216,11 @@
   
   console.log('Auto-clicker injection complete');
   
-  // Load auto-clicker state from storage
-  browser.storage.local.get(['autoClickerEnabled']).then(function(result) {
+  // Load auto-clicker and auto-buy state from storage
+  browser.storage.local.get(['autoClickerEnabled', 'autoBuyEnabled']).then(function(result) {
     autoClickerEnabled = result.autoClickerEnabled || false;
+    autoBuyEnabled = result.autoBuyEnabled || false;
+    
     if (autoClickerEnabled) {
       // Send toggle message to injected script
       window.postMessage({
@@ -175,8 +228,16 @@
         enabled: true
       }, '*');
     }
+    
+    if (autoBuyEnabled) {
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY',
+        enabled: true
+      }, '*');
+    }
   }).catch(function(error) {
-    console.error('Error loading auto-clicker state:', error);
+    console.error('Error loading extension state:', error);
   });
   
   // Listen for messages from popup
@@ -191,6 +252,19 @@
       window.postMessage({
         type: 'TOGGLE_AUTO_CLICKER',
         enabled: autoClickerEnabled
+      }, '*');
+      
+      sendResponse({ success: true });
+    } else if (message.action === 'toggleAutoBuy') {
+      autoBuyEnabled = message.enabled;
+      
+      // Save state to storage
+      browser.storage.local.set({ autoBuyEnabled: autoBuyEnabled });
+      
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY',
+        enabled: autoBuyEnabled
       }, '*');
       
       sendResponse({ success: true });

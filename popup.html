@@ -184,7 +184,20 @@
   </div>
   
   <div class="control-group">
-    <p style="font-size: 12px; opacity: 0.8;">Toggle the auto-clicker to automatically click the big cookie every 50ms. Pin this extension to your toolbar for easy access!</p>
+    <label>Auto-Buy (100ms interval):</label>
+    <div class="auto-clicker-controls">
+      <span>Off</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="autoBuyToggle">
+        <span class="slider"></span>
+      </label>
+      <span>On</span>
+    </div>
+    <div id="autoBuyStatus" class="auto-clicker-status">Auto-buy is disabled</div>
+  </div>
+  
+  <div class="control-group">
+    <p style="font-size: 12px; opacity: 0.8;">Auto-clicker clicks the big cookie every 50ms. Auto-buy purchases the most efficient building (highest CPS/C) every 100ms. Pin this extension to your toolbar for easy access!</p>
   </div>
   
   <script src="popup.js"></script>
