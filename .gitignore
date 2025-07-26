@@ -38,7 +38,7 @@ web-ext-artifacts/
 *.xpi
 
 # OS generated files
-Icon?
+Icon
 .DocumentRevisions-V100
 .fseventsd
 .TemporaryItems

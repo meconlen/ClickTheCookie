@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build script for Click the Cookie Firefox Extension
+# Build script for Click the Cookie Firefox Extension using web-ext
 
 set -e  # Exit on any error
 
@@ -12,13 +12,14 @@ if [ -d "build" ]; then
     rm -rf build
 fi
 
+if [ -d "web-ext-artifacts" ]; then
+    echo "Cleaning web-ext artifacts..."
+    rm -rf web-ext-artifacts
+fi
+
 if [ -f "click-the-cookie.zip" ]; then
     rm click-the-cookie.zip
 fi
-
-# Create build directory
-echo "Creating build directory..."
-mkdir -p build
 
 # Check if required files exist
 required_files=("manifest.json" "popup.html" "popup.js" "content.js")
@@ -55,26 +56,35 @@ if [ ! -d "icons" ]; then
     fi
 fi
 
-# Copy extension files
-echo "Copying extension files..."
+# Validate manifest.json
+echo "Validating manifest.json..."
+if ! python3 -m json.tool manifest.json > /dev/null 2>&1; then
+    echo "Error: Invalid JSON in manifest.json"
+    exit 1
+fi
+
+# Use web-ext to build the extension
+echo "Building extension with web-ext..."
+npx web-ext build --overwrite-dest
+
+# Copy the built extension to our expected location
+if [ -f "web-ext-artifacts"/*.zip ]; then
+    built_file=$(ls web-ext-artifacts/*.zip | head -1)
+    cp "$built_file" click-the-cookie.zip
+    echo "Extension package copied to click-the-cookie.zip"
+else
+    echo "Error: web-ext build failed to create zip file"
+    exit 1
+fi
+
+# Create build directory for backwards compatibility
+echo "Creating build directory for compatibility..."
+mkdir -p build
 cp manifest.json build/
 cp popup.html build/
 cp popup.js build/
 cp content.js build/
 cp -r icons build/
-
-# Validate manifest.json
-echo "Validating manifest.json..."
-if ! python3 -m json.tool build/manifest.json > /dev/null 2>&1; then
-    echo "Error: Invalid JSON in manifest.json"
-    exit 1
-fi
-
-# Create zip file for distribution
-echo "Creating distribution package..."
-cd build
-zip -r "../click-the-cookie.zip" . -x "*.DS_Store"
-cd ..
 
 # Get file size
 size=$(du -h click-the-cookie.zip | cut -f1)

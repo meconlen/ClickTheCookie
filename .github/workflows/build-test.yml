@@ -2,9 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, dev, 'release/*', 'hotfix/*' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   build-and-test:
@@ -22,7 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick python3-json-tool
+        sudo apt-get install -y imagemagick jq
         
     - name: Validate required files
       run: |
@@ -82,7 +82,7 @@ jobs:
         unzip -l click-the-cookie.zip
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: extension-build
         path: |
