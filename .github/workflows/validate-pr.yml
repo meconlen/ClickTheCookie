@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick python3-json-tool jq
+        sudo apt-get install -y imagemagick jq
         
     - name: Validate file structure
       run: |
