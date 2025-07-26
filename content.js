@@ -150,9 +150,9 @@
           let bestBuilding = null;
           let bestEfficiency = 0;
           
-          // Find the building with the highest CPS/C that we can afford
+          // Find the building with the highest CPS/C overall (regardless of affordability)
           Game.ObjectsById.forEach(function(building) {
-            if (!building || building.price > Game.cookies) return;
+            if (!building || building.price <= 0) return;
             
             const efficiency = building.storedCps / building.price;
             if (efficiency > bestEfficiency) {
@@ -161,9 +161,10 @@
             }
           });
           
-          // Buy the most efficient building
+          // Only buy if we can afford the most efficient building
           if (bestBuilding && bestBuilding.price <= Game.cookies) {
             bestBuilding.buy();
+            console.log('Auto-buy purchased:', bestBuilding.name, 'for efficiency:', bestEfficiency.toFixed(6));
           }
         }, 100); // Check every 100ms
         
