@@ -1,22 +1,10 @@
-// Popup script - Simple click counter display and auto-clicker controls
+// Popup script - Auto-clicker controls only
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Click the Cookie extension popup loaded');
   
   // Get DOM elements
-  const clickCountElement = document.getElementById('clickCount');
   const autoClickerToggle = document.getElementById('autoClickerToggle');
   const autoClickerStatus = document.getElementById('autoClickerStatus');
-  
-  // Load and display the click count
-  function updateClickCount() {
-    browser.storage.local.get(['clickCount']).then(function(result) {
-      const count = result.clickCount || 0;
-      clickCountElement.textContent = count.toLocaleString();
-    }).catch(function(error) {
-      console.error('Error loading click count:', error);
-      clickCountElement.textContent = '0';
-    });
-  }
   
   // Load and display auto-clicker state
   function loadAutoClickerState() {
@@ -67,9 +55,5 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Initial load
-  updateClickCount();
   loadAutoClickerState();
-  
-  // Update the count every second while popup is open
-  setInterval(updateClickCount, 1000);
 });
