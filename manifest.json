@@ -1,8 +1,8 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Click the Cookie",
   "version": "1.0.0",
-  "description": "An extension with all features removed",
+  "description": "A minimal Firefox extension for Cookie Clicker enthusiasts",
   
   "permissions": [],
   
@@ -14,7 +14,7 @@
     }
   ],
   
-  "browser_action": {
+  "action": {
     "default_popup": "popup.html",
     "default_title": "Click the Cookie",
     "default_icon": {
@@ -30,11 +30,5 @@
     "32": "icons/icon-32.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
-  },
-  
-  "applications": {
-    "gecko": {
-      "strict_min_version": "42.0"
-    }
   }
 }
