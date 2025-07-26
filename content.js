@@ -68,6 +68,20 @@
         function addEfficiencyDisplays() {
           if (!Game.ObjectsById) return;
           
+          // Find the most efficient building for highlighting
+          let mostEfficientBuilding = null;
+          let bestEfficiency = 0;
+          
+          Game.ObjectsById.forEach(function(building) {
+            if (!building || building.price <= 0) return;
+            
+            const efficiency = building.storedCps / building.price;
+            if (efficiency > bestEfficiency) {
+              bestEfficiency = efficiency;
+              mostEfficientBuilding = building;
+            }
+          });
+          
           Game.ObjectsById.forEach(function(building, index) {
             const buildingElement = document.getElementById('product' + index);
             if (!buildingElement) return;
@@ -77,7 +91,7 @@
             if (!efficiencyDisplay) {
               efficiencyDisplay = document.createElement('div');
               efficiencyDisplay.className = 'building-efficiency';
-              efficiencyDisplay.style.cssText = 'position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #4CAF50; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000;';
+              efficiencyDisplay.style.cssText = 'position: absolute; right: 50%; bottom: 20px; transform: translateX(50%); font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000; text-align: center;';
               
               // Make sure the building element has relative positioning
               if (buildingElement.style.position !== 'relative') {
@@ -87,12 +101,12 @@
               buildingElement.appendChild(efficiencyDisplay);
             }
             
-            // Calculate and display efficiency
-            updateBuildingEfficiency(building, efficiencyDisplay);
+            // Calculate and display efficiency with color coding
+            updateBuildingEfficiency(building, efficiencyDisplay, building === mostEfficientBuilding);
           });
         }
         
-        function updateBuildingEfficiency(building, displayElement) {
+        function updateBuildingEfficiency(building, displayElement, isMostEfficient) {
           if (!building || !displayElement) return;
           
           const price = building.price;
@@ -100,10 +114,10 @@
           
           if (price > 0 && cps > 0) {
             const efficiency = cps / price;
-            displayElement.textContent = 'CPS/C: ' + (efficiency < 0.001 ? efficiency.toExponential(2) : efficiency.toFixed(3));
-            displayElement.style.color = '#4CAF50';
+            displayElement.textContent = 'CPS/C: ' + efficiency.toExponential(4);
+            displayElement.style.color = isMostEfficient ? '#2196F3' : '#4CAF50'; // Blue for most efficient, green for others
           } else if (price > 0) {
-            displayElement.textContent = 'CPS/C: 0.000';
+            displayElement.textContent = 'CPS/C: 0.0000e+0';
             displayElement.style.color = '#999';
           } else {
             displayElement.textContent = 'CPS/C: ---';
@@ -115,13 +129,27 @@
         function updateAllEfficiencies() {
           if (!Game.ObjectsById) return;
           
+          // Find the most efficient building for highlighting
+          let mostEfficientBuilding = null;
+          let bestEfficiency = 0;
+          
+          Game.ObjectsById.forEach(function(building) {
+            if (!building || building.price <= 0) return;
+            
+            const efficiency = building.storedCps / building.price;
+            if (efficiency > bestEfficiency) {
+              bestEfficiency = efficiency;
+              mostEfficientBuilding = building;
+            }
+          });
+          
           Game.ObjectsById.forEach(function(building, index) {
             const buildingElement = document.getElementById('product' + index);
             if (!buildingElement) return;
             
             const efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
             if (efficiencyDisplay) {
-              updateBuildingEfficiency(building, efficiencyDisplay);
+              updateBuildingEfficiency(building, efficiencyDisplay, building === mostEfficientBuilding);
             }
           });
         }
