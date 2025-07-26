@@ -50,10 +50,91 @@
         if (typeof Game !== 'undefined' && Game.ClickCookie) {
           console.log('Game object found in page context - auto-clicker ready');
           gameReady = true;
+          
+          // Initialize building efficiency display
+          initBuildingEfficiency();
         } else {
           console.log('Game object not ready yet in page context, waiting...');
           setTimeout(waitForGame, 100);
         }
+      }
+      
+      // Building efficiency display functionality
+      function initBuildingEfficiency() {
+        console.log('Initializing building efficiency display');
+        
+        function addEfficiencyDisplays() {
+          if (!Game.ObjectsById) return;
+          
+          Game.ObjectsById.forEach(function(building, index) {
+            const buildingElement = document.getElementById('product' + index);
+            if (!buildingElement) return;
+            
+            // Check if efficiency display already exists
+            let efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
+            if (!efficiencyDisplay) {
+              efficiencyDisplay = document.createElement('div');
+              efficiencyDisplay.className = 'building-efficiency';
+              efficiencyDisplay.style.cssText = 'font-size: 10px; color: #4CAF50; font-weight: bold; margin-top: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);';
+              
+              // Find the right place to insert (after the price element)
+              const priceElement = buildingElement.querySelector('.price');
+              if (priceElement && priceElement.parentNode) {
+                priceElement.parentNode.insertBefore(efficiencyDisplay, priceElement.nextSibling);
+              } else {
+                buildingElement.appendChild(efficiencyDisplay);
+              }
+            }
+            
+            // Calculate and display efficiency
+            updateBuildingEfficiency(building, efficiencyDisplay);
+          });
+        }
+        
+        function updateBuildingEfficiency(building, displayElement) {
+          if (!building || !displayElement) return;
+          
+          const price = building.price;
+          const cps = building.storedCps;
+          
+          if (price > 0 && cps > 0) {
+            const efficiency = cps / price;
+            displayElement.textContent = 'CPS/C: ' + (efficiency < 0.001 ? efficiency.toExponential(2) : efficiency.toFixed(3));
+            displayElement.style.color = '#4CAF50';
+          } else if (price > 0) {
+            displayElement.textContent = 'CPS/C: 0.000';
+            displayElement.style.color = '#999';
+          } else {
+            displayElement.textContent = 'CPS/C: ---';
+            displayElement.style.color = '#666';
+          }
+        }
+        
+        // Update efficiency displays periodically
+        function updateAllEfficiencies() {
+          if (!Game.ObjectsById) return;
+          
+          Game.ObjectsById.forEach(function(building, index) {
+            const buildingElement = document.getElementById('product' + index);
+            if (!buildingElement) return;
+            
+            const efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
+            if (efficiencyDisplay) {
+              updateBuildingEfficiency(building, efficiencyDisplay);
+            }
+          });
+        }
+        
+        // Initial setup
+        addEfficiencyDisplays();
+        
+        // Update every 2 seconds
+        setInterval(function() {
+          addEfficiencyDisplays(); // Add to any new buildings
+          updateAllEfficiencies(); // Update all existing displays
+        }, 2000);
+        
+        console.log('Building efficiency display initialized');
       }
       
       // Listen for toggle messages from content script
