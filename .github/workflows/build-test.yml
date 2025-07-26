@@ -1,0 +1,91 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick python3-json-tool
+        
+    - name: Validate required files
+      run: |
+        required_files=("manifest.json" "popup.html" "popup.js" "content.js")
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "Error: Required file $file not found!"
+            exit 1
+          fi
+        done
+        
+    - name: Validate manifest.json
+      run: |
+        python3 -m json.tool manifest.json > /dev/null
+        
+    - name: Check manifest structure
+      run: |
+        # Verify required manifest fields
+        jq -e '.name' manifest.json > /dev/null
+        jq -e '.version' manifest.json > /dev/null
+        jq -e '.manifest_version' manifest.json > /dev/null
+        jq -e '.description' manifest.json > /dev/null
+        
+    - name: Build extension
+      run: |
+        chmod +x build.sh
+        ./build.sh
+        
+    - name: Verify build artifacts
+      run: |
+        if [ ! -d "build" ]; then
+          echo "Error: build directory not created!"
+          exit 1
+        fi
+        
+        if [ ! -f "click-the-cookie.zip" ]; then
+          echo "Error: Extension zip file not created!"
+          exit 1
+        fi
+        
+        # Check that all required files are in build directory
+        required_files=("manifest.json" "popup.html" "popup.js" "content.js")
+        for file in "${required_files[@]}"; do
+          if [ ! -f "build/$file" ]; then
+            echo "Error: Required file $file not found in build directory!"
+            exit 1
+          fi
+        done
+        
+    - name: Test extension structure
+      run: |
+        # Verify the zip contains expected files
+        unzip -t click-the-cookie.zip
+        
+        # List contents for verification
+        echo "Extension package contents:"
+        unzip -l click-the-cookie.zip
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: extension-build
+        path: |
+          build/
+          click-the-cookie.zip
+        retention-days: 30
