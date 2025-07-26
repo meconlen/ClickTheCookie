@@ -19,7 +19,7 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
-    "web-ext": "^7.0.0"
+    "web-ext": "^7.12.0"
   },
   "repository": {
     "type": "git",

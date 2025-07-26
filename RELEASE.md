@@ -112,10 +112,10 @@ git push
 
 ### 3. Release Testing
 
-- Create PR from `release/v1.2.0` → `main` for review
-- Run final tests and validation
+- Run final tests and validation on the release branch
 - Fix any critical issues on the release branch
 - Merge fixes back to `dev` if needed
+- Ensure the build passes and extension works correctly
 
 ### 4. Complete Release
 
