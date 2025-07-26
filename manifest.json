@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "description": "A minimal Firefox extension for Cookie Clicker enthusiasts",
   
-  "permissions": [],
+  "permissions": [
+    "activeTab"
+  ],
   
   "content_scripts": [
     {
@@ -17,10 +19,7 @@
   "browser_action": {
     "default_popup": "popup.html",
     "default_title": "Click the Cookie",
-    "default_icon": {
-      "19": "icons/icon-19.png",
-      "38": "icons/icon-38.png"
-    }
+    "default_icon": "icons/icon-19-simple.png"
   },
   
   "icons": {
