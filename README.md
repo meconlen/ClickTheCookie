@@ -2,6 +2,49 @@
 
 A Firefox extension with all features removed.
 
+## Development Workflow (GitFlow)
+
+This project uses GitFlow for development and release management.
+
+### Branch Structure
+
+- **`main`** - Production releases, stable code
+- **`dev`** - Development integration branch
+- **`feature/*`** - Individual features
+- **`release/*`** - Release preparation
+- **`hotfix/*`** - Critical fixes
+
+### Getting Started
+
+```bash
+# Clone and setup
+git clone https://github.com/meconlen/ClickTheCookie.git
+cd ClickTheCookie
+
+# Start development
+git checkout dev
+git pull origin dev
+
+# Create feature branch
+git checkout -b feature/your-feature-name
+
+# When feature is complete
+git checkout dev
+git merge --no-ff feature/your-feature-name
+```
+
+### Creating Releases
+
+```bash
+# Create release branch
+./create-release.sh 1.2.0 --release-branch
+
+# Or create hotfix
+./create-release.sh 1.1.1 --hotfix
+```
+
+See [RELEASE.md](RELEASE.md) for detailed GitFlow instructions.
+
 ## Features
 
 All features have been removed from this extension.
