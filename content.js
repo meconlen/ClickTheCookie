@@ -11,9 +11,8 @@
   if (bigCookie) {
     bigCookie.addEventListener('click', function() {
       clickCount++;
-      console.log(`Cookie clicked! Total clicks this session: ${clickCount}`);
       
-      // Store the count
+      // Store the count (no console logging for performance)
       browser.storage.local.set({ clickCount: clickCount });
     });
     
