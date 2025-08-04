@@ -29,6 +29,10 @@
     "persistent": false
   },
   
+  "web_accessible_resources": [
+    "injected-script.js"
+  ],
+  
   "icons": {
     "16": "icons/icon-16.png",
     "19": "icons/icon-19.png",
