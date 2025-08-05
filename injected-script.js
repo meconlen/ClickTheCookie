@@ -57,47 +57,47 @@
     }
   }
   
+  // Calculate building CPS per cookie using Cookie Clicker's actual calculation
+  function calculateBuildingCpsPerCookie(building) {
+    if (!building || building.price <= 0) return 0;
+    
+    // Get the base CPS for one unit of this building
+    let baseCps = 0;
+    try {
+      baseCps = building.cps(building);
+    } catch (error) {
+      // Fallback if cps() method fails
+      baseCps = building.baseCps || 0;
+    }
+    
+    // Apply the same multipliers that Cookie Clicker uses (from main.js lines 5058-5067)
+    let adjustedCps = baseCps;
+    
+    // Apply ascension and level multipliers (if not in ascension mode)
+    if (Game.ascensionMode !== 1) {
+      // Building level bonus: +1% per level
+      const levelBonus = 1 + (building.level || 0) * 0.01;
+      
+      // Get buildMult (this is complex but we can approximate or use Game's current value)
+      let buildMult = 1;
+      // Note: buildMult calculation is complex involving pantheon gods, etc.
+      // For now, we'll use a simplified approach or try to access Game's current multipliers
+      
+      adjustedCps *= levelBonus * buildMult;
+    }
+    
+    // Special case for Grandmas (id=1) with Milkhelp tablets
+    if (building.id === 1 && Game.Has && Game.Has('Milkhelp® lactose intolerance relief tablets')) {
+      const milkMult = 1; // Simplified - actual calculation is more complex
+      adjustedCps *= 1 + 0.05 * (Game.milkProgress || 0) * milkMult;
+    }
+    
+    // Return CPS per cookie spent
+    return adjustedCps / building.price;
+  }
+  
   // Building efficiency display functionality
   function initBuildingEfficiency() {
-    
-    // Calculate building CPS per cookie using Cookie Clicker's actual calculation
-    function calculateBuildingCpsPerCookie(building) {
-      if (!building || building.price <= 0) return 0;
-      
-      // Get the base CPS for one unit of this building
-      let baseCps = 0;
-      try {
-        baseCps = building.cps(building);
-      } catch (error) {
-        // Fallback if cps() method fails
-        baseCps = building.baseCps || 0;
-      }
-      
-      // Apply the same multipliers that Cookie Clicker uses (from main.js lines 5058-5067)
-      let adjustedCps = baseCps;
-      
-      // Apply ascension and level multipliers (if not in ascension mode)
-      if (Game.ascensionMode !== 1) {
-        // Building level bonus: +1% per level
-        const levelBonus = 1 + (building.level || 0) * 0.01;
-        
-        // Get buildMult (this is complex but we can approximate or use Game's current value)
-        let buildMult = 1;
-        // Note: buildMult calculation is complex involving pantheon gods, etc.
-        // For now, we'll use a simplified approach or try to access Game's current multipliers
-        
-        adjustedCps *= levelBonus * buildMult;
-      }
-      
-      // Special case for Grandmas (id=1) with Milkhelp tablets
-      if (building.id === 1 && Game.Has && Game.Has('Milkhelp® lactose intolerance relief tablets')) {
-        const milkMult = 1; // Simplified - actual calculation is more complex
-        adjustedCps *= 1 + 0.05 * (Game.milkProgress || 0) * milkMult;
-      }
-      
-      // Return CPS per cookie spent
-      return adjustedCps / building.price;
-    }
     
     function addEfficiencyDisplays() {
       if (!Game.ObjectsById) return;
