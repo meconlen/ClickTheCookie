@@ -3,6 +3,8 @@
   'use strict';
   
   let autoClickerEnabled = false;
+  let autoBuyBuildingsEnabled = false;
+  let autoBuyUpgradesEnabled = false;
   
   // Load and inject the external script into the page's context
   function injectScript() {
@@ -18,12 +20,31 @@
   injectScript();
   
   // Load auto-clicker state from storage
-  browser.storage.local.get(['autoClickerEnabled']).then(function(result) {
+  browser.storage.local.get(['autoClickerEnabled', 'autoBuyBuildingsEnabled', 'autoBuyUpgradesEnabled']).then(function(result) {
     autoClickerEnabled = result.autoClickerEnabled || false;
+    autoBuyBuildingsEnabled = result.autoBuyBuildingsEnabled || false;
+    autoBuyUpgradesEnabled = result.autoBuyUpgradesEnabled || false;
+    
     if (autoClickerEnabled) {
       // Send toggle message to injected script
       window.postMessage({
         type: 'TOGGLE_AUTO_CLICKER',
+        enabled: true
+      }, '*');
+    }
+    
+    if (autoBuyBuildingsEnabled) {
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY_BUILDINGS',
+        enabled: true
+      }, '*');
+    }
+    
+    if (autoBuyUpgradesEnabled) {
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY_UPGRADES',
         enabled: true
       }, '*');
     }
@@ -43,6 +64,32 @@
       window.postMessage({
         type: 'TOGGLE_AUTO_CLICKER',
         enabled: autoClickerEnabled
+      }, '*');
+      
+      sendResponse({ success: true });
+    } else if (message.action === 'toggleAutoBuyBuildings') {
+      autoBuyBuildingsEnabled = message.enabled;
+      
+      // Save state to storage
+      browser.storage.local.set({ autoBuyBuildingsEnabled: autoBuyBuildingsEnabled });
+      
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY_BUILDINGS',
+        enabled: autoBuyBuildingsEnabled
+      }, '*');
+      
+      sendResponse({ success: true });
+    } else if (message.action === 'toggleAutoBuyUpgrades') {
+      autoBuyUpgradesEnabled = message.enabled;
+      
+      // Save state to storage
+      browser.storage.local.set({ autoBuyUpgradesEnabled: autoBuyUpgradesEnabled });
+      
+      // Send toggle message to injected script
+      window.postMessage({
+        type: 'TOGGLE_AUTO_BUY_UPGRADES',
+        enabled: autoBuyUpgradesEnabled
       }, '*');
       
       sendResponse({ success: true });

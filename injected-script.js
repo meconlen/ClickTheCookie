@@ -209,8 +209,15 @@
     }
     
     autoBuyInterval = setInterval(function() {
-      // TODO: Implement unified auto-buy logic that checks both buildings and upgrades
-      // based on autoBuyBuildingsEnabled and autoBuyUpgradesEnabled flags
+      // Auto-buy buildings if enabled
+      if (autoBuyBuildingsEnabled) {
+        autoBuyMostEfficientBuilding();
+      }
+      
+      // Auto-buy upgrades if enabled
+      if (autoBuyUpgradesEnabled) {
+        autoBuyAffordableUpgrades();
+      }
     }, 100);
   }
   
@@ -290,6 +297,53 @@
       clearInterval(goldenCookieInterval);
       goldenCookieInterval = null;
     }
+  }
+  
+  // Auto-buy building functionality
+  function autoBuyMostEfficientBuilding() {
+    if (!Game.ObjectsById || Game.cookies < 1) return;
+    
+    let mostEfficientBuilding = null;
+    let bestEfficiency = 0;
+    
+    // Find the most efficient building that we can afford
+    Game.ObjectsById.forEach(function(building) {
+      if (!building || building.price <= 0 || building.price > Game.cookies) return;
+      
+      // Use the same efficiency calculation as the display
+      const efficiency = calculateBuildingCpsPerCookie(building);
+      if (efficiency > bestEfficiency) {
+        bestEfficiency = efficiency;
+        mostEfficientBuilding = building;
+      }
+    });
+    
+    // Buy the most efficient affordable building
+    if (mostEfficientBuilding && mostEfficientBuilding.price <= Game.cookies) {
+      mostEfficientBuilding.buy();
+      console.log('Auto-buy: Purchased', mostEfficientBuilding.name, 'for', mostEfficientBuilding.price, 'cookies (efficiency:', bestEfficiency.toExponential(4), ')');
+    }
+  }
+  
+  // Auto-buy upgrades functionality
+  function autoBuyAffordableUpgrades() {
+    if (!Game.UpgradesInStore || Game.cookies < 1) return;
+    
+    // Buy all affordable upgrades (they're generally always beneficial)
+    Game.UpgradesInStore.forEach(function(upgrade) {
+      if (upgrade && upgrade.basePrice && upgrade.basePrice <= Game.cookies) {
+        // Skip certain upgrades that might be detrimental or require manual decision
+        const skipUpgrades = [
+          'One mind', 'Communal brainsweep', 'Elder Covenant', 
+          'Revoke Elder Covenant', 'Elder Pledge'
+        ];
+        
+        if (!skipUpgrades.includes(upgrade.name)) {
+          upgrade.buy();
+          console.log('Auto-buy: Purchased upgrade', upgrade.name, 'for', upgrade.basePrice, 'cookies');
+        }
+      }
+    });
   }
   
   // Listen for toggle messages from content script
