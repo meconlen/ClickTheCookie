@@ -303,25 +303,41 @@
   function autoBuyMostEfficientBuilding() {
     if (!Game.ObjectsById || Game.cookies < 1) return;
     
-    let mostEfficientBuilding = null;
-    let bestEfficiency = 0;
+    let globalMostEfficientBuilding = null;
+    let globalBestEfficiency = 0;
+    let affordableMostEfficientBuilding = null;
+    let affordableBestEfficiency = 0;
     
-    // Find the most efficient building that we can afford
+    // First, find the most efficient building overall (regardless of affordability)
     Game.ObjectsById.forEach(function(building) {
-      if (!building || building.price <= 0 || building.price > Game.cookies) return;
+      if (!building || building.price <= 0) return;
       
-      // Use the same efficiency calculation as the display
       const efficiency = calculateBuildingCpsPerCookie(building);
-      if (efficiency > bestEfficiency) {
-        bestEfficiency = efficiency;
-        mostEfficientBuilding = building;
+      if (efficiency > globalBestEfficiency) {
+        globalBestEfficiency = efficiency;
+        globalMostEfficientBuilding = building;
+      }
+      
+      // Also track the most efficient affordable building
+      if (building.price <= Game.cookies && efficiency > affordableBestEfficiency) {
+        affordableBestEfficiency = efficiency;
+        affordableMostEfficientBuilding = building;
       }
     });
     
-    // Buy the most efficient affordable building
-    if (mostEfficientBuilding && mostEfficientBuilding.price <= Game.cookies) {
-      mostEfficientBuilding.buy();
-      console.log('Auto-buy: Purchased', mostEfficientBuilding.name, 'for', mostEfficientBuilding.price, 'cookies (efficiency:', bestEfficiency.toExponential(4), ')');
+    // Decision logic: Only buy if the affordable building is the global most efficient,
+    // or if the efficiency difference is negligible (within 5%)
+    if (affordableMostEfficientBuilding && globalMostEfficientBuilding) {
+      const efficiencyRatio = affordableBestEfficiency / globalBestEfficiency;
+      
+      if (affordableMostEfficientBuilding === globalMostEfficientBuilding || efficiencyRatio >= 0.95) {
+        // Buy the affordable building if it's the globally most efficient or very close
+        affordableMostEfficientBuilding.buy();
+        console.log('Auto-buy: Purchased', affordableMostEfficientBuilding.name, 'for', affordableMostEfficientBuilding.price, 'cookies (efficiency:', affordableBestEfficiency.toExponential(4), ')');
+      } else {
+        // Wait and save up for the more efficient building
+        console.log('Auto-buy: Saving for', globalMostEfficientBuilding.name, '(need', globalMostEfficientBuilding.price, 'cookies, have', Game.cookies, ') - efficiency:', globalBestEfficiency.toExponential(4), 'vs affordable', affordableBestEfficiency.toExponential(4));
+      }
     }
   }
   
