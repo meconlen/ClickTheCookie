@@ -95,9 +95,59 @@
     }
     
     // Return CPS per cookie spent (efficiency)
-    return perBuildingCps / building.price;
+    return perBuildingCps / building.price;  }
+  
+  // Global efficiency update functions (moved from initBuildingEfficiency for access from auto-buy interval)
+  function updateBuildingEfficiency(building, displayElement, isMostEfficient) {
+    if (!building || !displayElement) return;
+    
+    const price = building.price;
+    
+    if (price > 0) {
+      // Use the proper CPS calculation like Cookie Clicker does
+      const efficiency = calculateBuildingCpsPerCookie(building);
+      if (efficiency > 0) {
+        displayElement.textContent = 'CPS/C: ' + efficiency.toExponential(4);
+        displayElement.style.color = isMostEfficient ? '#2196F3' : '#4CAF50';
+      } else {
+        displayElement.textContent = 'CPS/C: 0.0000e+0';
+        displayElement.style.color = '#999';
+      }
+    } else {
+      displayElement.textContent = 'CPS/C: ---';
+      displayElement.style.color = '#666';
+    }
   }
   
+  function updateAllEfficiencies() {
+    if (!Game.ObjectsById) return;
+    
+    // Find the most efficient building for highlighting
+    let mostEfficientBuilding = null;
+    let bestEfficiency = 0;
+    
+    Game.ObjectsById.forEach(function(building) {
+      if (!building || building.price <= 0) return;
+      
+      // Use the proper CPS calculation like Cookie Clicker does
+      const efficiency = calculateBuildingCpsPerCookie(building);
+      if (efficiency > bestEfficiency) {
+        bestEfficiency = efficiency;
+        mostEfficientBuilding = building;
+      }
+    });
+    
+    Game.ObjectsById.forEach(function(building, index) {
+      const buildingElement = document.getElementById('product' + index);
+      if (!buildingElement) return;
+      
+      const efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
+      if (efficiencyDisplay) {
+        updateBuildingEfficiency(building, efficiencyDisplay, building === mostEfficientBuilding);
+      }
+    });
+  }
+
   // Building efficiency display functionality
   function initBuildingEfficiency() {
     
@@ -143,65 +193,11 @@
       });
     }
     
-    function updateBuildingEfficiency(building, displayElement, isMostEfficient) {
-      if (!building || !displayElement) return;
-      
-      const price = building.price;
-      
-      if (price > 0) {
-        // Use the proper CPS calculation like Cookie Clicker does
-        const efficiency = calculateBuildingCpsPerCookie(building);
-        if (efficiency > 0) {
-          displayElement.textContent = 'CPS/C: ' + efficiency.toExponential(4);
-          displayElement.style.color = isMostEfficient ? '#2196F3' : '#4CAF50';
-        } else {
-          displayElement.textContent = 'CPS/C: 0.0000e+0';
-          displayElement.style.color = '#999';
-        }
-      } else {
-        displayElement.textContent = 'CPS/C: ---';
-        displayElement.style.color = '#666';
-      }
-    }
-    
-    // Update efficiency displays periodically
-    function updateAllEfficiencies() {
-      if (!Game.ObjectsById) return;
-      
-      // Find the most efficient building for highlighting
-      let mostEfficientBuilding = null;
-      let bestEfficiency = 0;
-      
-      Game.ObjectsById.forEach(function(building) {
-        if (!building || building.price <= 0) return;
-        
-        // Use the proper CPS calculation like Cookie Clicker does
-        const efficiency = calculateBuildingCpsPerCookie(building);
-        if (efficiency > bestEfficiency) {
-          bestEfficiency = efficiency;
-          mostEfficientBuilding = building;
-        }
-      });
-      
-      Game.ObjectsById.forEach(function(building, index) {
-        const buildingElement = document.getElementById('product' + index);
-        if (!buildingElement) return;
-        
-        const efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
-        if (efficiencyDisplay) {
-          updateBuildingEfficiency(building, efficiencyDisplay, building === mostEfficientBuilding);
-        }
-      });
-    }
-    
     // Initial setup
     addEfficiencyDisplays();
     
-    // Update every 2 seconds
-    setInterval(function() {
-      addEfficiencyDisplays(); // Add to any new buildings
-      updateAllEfficiencies(); // Update all existing displays
-    }, 2000);
+    // Efficiency updates are now handled by the unified auto-buy interval (100ms)
+    // This provides much more responsive efficiency display updates
   }
   
   // Unified auto-buy functionality
@@ -211,6 +207,33 @@
     }
     
     autoBuyInterval = setInterval(function() {
+      // Update efficiency displays for responsive feedback
+      if (gameReady && Game.ObjectsById) {
+        // Add efficiency displays to any new buildings
+        Game.ObjectsById.forEach(function(building, index) {
+          const buildingElement = document.getElementById('product' + index);
+          if (!buildingElement) return;
+          
+          // Check if efficiency display already exists
+          let efficiencyDisplay = buildingElement.querySelector('.building-efficiency');
+          if (!efficiencyDisplay) {
+            efficiencyDisplay = document.createElement('div');
+            efficiencyDisplay.className = 'building-efficiency';
+            efficiencyDisplay.style.cssText = 'position: absolute; right: 20%; bottom: 5px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 1000; text-align: center;';
+            
+            // Make sure the building element has relative positioning
+            if (buildingElement.style.position !== 'relative') {
+              buildingElement.style.position = 'relative';
+            }
+            
+            buildingElement.appendChild(efficiencyDisplay);
+          }
+        });
+        
+        // Update all efficiency displays
+        updateAllEfficiencies();
+      }
+      
       // Auto-buy buildings if enabled
       if (autoBuyBuildingsEnabled) {
         autoBuyMostEfficientBuilding();
