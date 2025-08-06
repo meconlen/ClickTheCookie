@@ -57,28 +57,21 @@
     }
   }
   
-  // Calculate building CPS per cookie using Cookie Clicker's actual calculation
+  // Calculate building CPS per cookie using Cookie Clicker's exact calculation
   function calculateBuildingCpsPerCookie(building) {
     if (!building || building.price <= 0) return 0;
     
-    // Use Cookie Clicker's own CPS calculation method
-    // This automatically includes all multipliers, bonuses, and effects
+    // Use Cookie Clicker's exact formula from main.js line 8083 and 8096:
+    // (me.storedTotalCps/me.amount)*Game.globalCpsMult
     let perBuildingCps = 0;
     
     if (building.amount > 0) {
-      // If we own buildings of this type, get the current total CPS contribution
-      // and divide by the number of buildings to get per-building CPS
-      const totalCpsContribution = building.totalCps || 0;
-      perBuildingCps = totalCpsContribution / building.amount;
+      // For buildings we own, use Cookie Clicker's exact tooltip calculation
+      perBuildingCps = (building.storedTotalCps / building.amount) * Game.globalCpsMult;
     } else {
-      // If we don't own any, simulate what one building would produce
-      // Use Cookie Clicker's cps() method which includes all multipliers
-      try {
-        perBuildingCps = building.cps(building);
-      } catch (error) {
-        // Fallback to base CPS if the method fails
-        perBuildingCps = building.baseCps || 0;
-      }
+      // For buildings we don't own, use the stored CPS with global multiplier
+      // This represents what one building would produce
+      perBuildingCps = building.storedCps * Game.globalCpsMult;
     }
     
     // Return CPS per cookie spent (efficiency)
