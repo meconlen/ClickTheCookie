@@ -57,47 +57,47 @@
     }
   }
   
+  // Calculate building CPS per cookie using Cookie Clicker's actual calculation
+  function calculateBuildingCpsPerCookie(building) {
+    if (!building || building.price <= 0) return 0;
+    
+    // Get the base CPS for one unit of this building
+    let baseCps = 0;
+    try {
+      baseCps = building.cps(building);
+    } catch (error) {
+      // Fallback if cps() method fails
+      baseCps = building.baseCps || 0;
+    }
+    
+    // Apply the same multipliers that Cookie Clicker uses (from main.js lines 5058-5067)
+    let adjustedCps = baseCps;
+    
+    // Apply ascension and level multipliers (if not in ascension mode)
+    if (Game.ascensionMode !== 1) {
+      // Building level bonus: +1% per level
+      const levelBonus = 1 + (building.level || 0) * 0.01;
+      
+      // Get buildMult (this is complex but we can approximate or use Game's current value)
+      let buildMult = 1;
+      // Note: buildMult calculation is complex involving pantheon gods, etc.
+      // For now, we'll use a simplified approach or try to access Game's current multipliers
+      
+      adjustedCps *= levelBonus * buildMult;
+    }
+    
+    // Special case for Grandmas (id=1) with Milkhelp tablets
+    if (building.id === 1 && Game.Has && Game.Has('Milkhelp® lactose intolerance relief tablets')) {
+      const milkMult = 1; // Simplified - actual calculation is more complex
+      adjustedCps *= 1 + 0.05 * (Game.milkProgress || 0) * milkMult;
+    }
+    
+    // Return CPS per cookie spent
+    return adjustedCps / building.price;
+  }
+  
   // Building efficiency display functionality
   function initBuildingEfficiency() {
-    
-    // Calculate building CPS per cookie using Cookie Clicker's actual calculation
-    function calculateBuildingCpsPerCookie(building) {
-      if (!building || building.price <= 0) return 0;
-      
-      // Get the base CPS for one unit of this building
-      let baseCps = 0;
-      try {
-        baseCps = building.cps(building);
-      } catch (error) {
-        // Fallback if cps() method fails
-        baseCps = building.baseCps || 0;
-      }
-      
-      // Apply the same multipliers that Cookie Clicker uses (from main.js lines 5058-5067)
-      let adjustedCps = baseCps;
-      
-      // Apply ascension and level multipliers (if not in ascension mode)
-      if (Game.ascensionMode !== 1) {
-        // Building level bonus: +1% per level
-        const levelBonus = 1 + (building.level || 0) * 0.01;
-        
-        // Get buildMult (this is complex but we can approximate or use Game's current value)
-        let buildMult = 1;
-        // Note: buildMult calculation is complex involving pantheon gods, etc.
-        // For now, we'll use a simplified approach or try to access Game's current multipliers
-        
-        adjustedCps *= levelBonus * buildMult;
-      }
-      
-      // Special case for Grandmas (id=1) with Milkhelp tablets
-      if (building.id === 1 && Game.Has && Game.Has('Milkhelp® lactose intolerance relief tablets')) {
-        const milkMult = 1; // Simplified - actual calculation is more complex
-        adjustedCps *= 1 + 0.05 * (Game.milkProgress || 0) * milkMult;
-      }
-      
-      // Return CPS per cookie spent
-      return adjustedCps / building.price;
-    }
     
     function addEfficiencyDisplays() {
       if (!Game.ObjectsById) return;
@@ -209,8 +209,15 @@
     }
     
     autoBuyInterval = setInterval(function() {
-      // TODO: Implement unified auto-buy logic that checks both buildings and upgrades
-      // based on autoBuyBuildingsEnabled and autoBuyUpgradesEnabled flags
+      // Auto-buy buildings if enabled
+      if (autoBuyBuildingsEnabled) {
+        autoBuyMostEfficientBuilding();
+      }
+      
+      // Auto-buy upgrades if enabled
+      if (autoBuyUpgradesEnabled) {
+        autoBuyAffordableUpgrades();
+      }
     }, 100);
   }
   
@@ -290,6 +297,69 @@
       clearInterval(goldenCookieInterval);
       goldenCookieInterval = null;
     }
+  }
+  
+  // Auto-buy building functionality
+  function autoBuyMostEfficientBuilding() {
+    if (!Game.ObjectsById || Game.cookies < 1) return;
+    
+    let globalMostEfficientBuilding = null;
+    let globalBestEfficiency = 0;
+    let affordableMostEfficientBuilding = null;
+    let affordableBestEfficiency = 0;
+    
+    // First, find the most efficient building overall (regardless of affordability)
+    Game.ObjectsById.forEach(function(building) {
+      if (!building || building.price <= 0) return;
+      
+      const efficiency = calculateBuildingCpsPerCookie(building);
+      if (efficiency > globalBestEfficiency) {
+        globalBestEfficiency = efficiency;
+        globalMostEfficientBuilding = building;
+      }
+      
+      // Also track the most efficient affordable building
+      if (building.price <= Game.cookies && efficiency > affordableBestEfficiency) {
+        affordableBestEfficiency = efficiency;
+        affordableMostEfficientBuilding = building;
+      }
+    });
+    
+    // Decision logic: Only buy if the affordable building is the global most efficient,
+    // or if the efficiency difference is negligible (within 5%)
+    if (affordableMostEfficientBuilding && globalMostEfficientBuilding) {
+      const efficiencyRatio = affordableBestEfficiency / globalBestEfficiency;
+      
+      if (affordableMostEfficientBuilding === globalMostEfficientBuilding || efficiencyRatio >= 0.95) {
+        // Buy the affordable building if it's the globally most efficient or very close
+        affordableMostEfficientBuilding.buy();
+        console.log('Auto-buy: Purchased', affordableMostEfficientBuilding.name, 'for', affordableMostEfficientBuilding.price, 'cookies (efficiency:', affordableBestEfficiency.toExponential(4), ')');
+      } else {
+        // Wait and save up for the more efficient building
+        console.log('Auto-buy: Saving for', globalMostEfficientBuilding.name, '(need', globalMostEfficientBuilding.price, 'cookies, have', Game.cookies, ') - efficiency:', globalBestEfficiency.toExponential(4), 'vs affordable', affordableBestEfficiency.toExponential(4));
+      }
+    }
+  }
+  
+  // Auto-buy upgrades functionality
+  function autoBuyAffordableUpgrades() {
+    if (!Game.UpgradesInStore || Game.cookies < 1) return;
+    
+    // Buy all affordable upgrades (they're generally always beneficial)
+    Game.UpgradesInStore.forEach(function(upgrade) {
+      if (upgrade && upgrade.basePrice && upgrade.basePrice <= Game.cookies) {
+        // Skip certain upgrades that might be detrimental or require manual decision
+        const skipUpgrades = [
+          'One mind', 'Communal brainsweep', 'Elder Covenant', 
+          'Revoke Elder Covenant', 'Elder Pledge'
+        ];
+        
+        if (!skipUpgrades.includes(upgrade.name)) {
+          upgrade.buy();
+          console.log('Auto-buy: Purchased upgrade', upgrade.name, 'for', upgrade.basePrice, 'cookies');
+        }
+      }
+    });
   }
   
   // Listen for toggle messages from content script
