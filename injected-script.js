@@ -74,6 +74,26 @@
       perBuildingCps = building.storedCps * Game.globalCpsMult;
     }
     
+    // Add grandma synergy boost calculation (only for grandmas)
+    // This includes the additional value grandmas provide by boosting other buildings
+    if (building.name === 'Grandma' && Game.GrandmaSynergies && building.amount > 0) {
+      let synergyBoost = 0;
+      
+      // Calculate synergy boost from grandmas to other buildings
+      // This matches the calculation from main.js lines 8028-8037
+      for (let i in Game.GrandmaSynergies) {
+        if (Game.Has(Game.GrandmaSynergies[i])) {
+          let other = Game.Upgrades[Game.GrandmaSynergies[i]].buildingTie;
+          let mult = building.amount * 0.01 * (1 / (other.id - 1));
+          let boost = (other.storedTotalCps * Game.globalCpsMult) - (other.storedTotalCps * Game.globalCpsMult) / (1 + mult);
+          synergyBoost += boost;
+        }
+      }
+      
+      // Add the synergy boost divided by the number of grandmas to get per-grandma contribution
+      perBuildingCps += synergyBoost / building.amount;
+    }
+    
     // Return CPS per cookie spent (efficiency)
     return perBuildingCps / building.price;
   }
